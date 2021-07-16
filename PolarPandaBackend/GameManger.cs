@@ -12,7 +12,7 @@ namespace PolarPandaBackend
         private int currentGame;
         private DateTime gameStart;
         private DateTime gameEnd;
-
+        
 
 
 
@@ -43,6 +43,7 @@ namespace PolarPandaBackend
         {
             // Add Safer logic later on;
             currentGame = game;
+            BackendBroadcaster.SendMessage("newGame " + game + " ");
         }
 
 

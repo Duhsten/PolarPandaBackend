@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,9 +18,9 @@ namespace PolarPandaBackend
     {
         TwitchClient client;
         GameManger gameManager;
-        JoinedChannel channelMain;
         static void Main(string[] args)
         {
+           
             Program pg = new Program();
             Console.ReadLine();
            
@@ -27,6 +28,8 @@ namespace PolarPandaBackend
         
         public Program()
         {
+            Console.WriteLine("Starting Backend");
+           
             gameManager = new GameManger();
             gameManager.SetCurrentGame(0);
             ConnectionCredentials credentials = new ConnectionCredentials("polarpandagames", "oauth:t49g5o0pbc1s7qct0pxpuc1kadj9g9");
@@ -68,24 +71,31 @@ namespace PolarPandaBackend
         {
             Console.WriteLine("Successfully Joined the Main Chat");
             client.SendMessage(e.Channel, "PolarPanda Backend has started!");
-         
+            SendAdminMessage("I am Online c:");
         }
 
         private void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
-            if (e.ChatMessage.Message.Contains("badword"))
-                client.TimeoutUser(e.ChatMessage.Channel, e.ChatMessage.Username, TimeSpan.FromMinutes(30), "Bad word! 30 minute timeout!");
+           
             if (e.ChatMessage.Message.StartsWith("!"))
             {
-               runCommand(e.ChatMessage.Message, e.ChatMessage.Username);
+               RunCommand(e.ChatMessage.Message, e.ChatMessage.Username, e.ChatMessage.UserId);
             }
             
         }
 
         private void Client_OnWhisperReceived(object sender, OnWhisperReceivedArgs e)
         {
-            if (e.WhisperMessage.Username == "my_friend")
-                client.SendWhisper(e.WhisperMessage.Username, "Hey! Whispers are so cool!!");
+            Console.WriteLine("Recieved Whisper");
+            if (GetAdminList().Contains(e.WhisperMessage.UserId))
+            {
+                client.SendWhisper(e.WhisperMessage.Username, "Hey there Admin!");
+                if (e.WhisperMessage.Message.StartsWith("!"))
+                {
+                    RunAdminCommand(e.WhisperMessage.Message, e.WhisperMessage.Username);
+                }
+            }
+                
         }
 
         private void Client_OnNewSubscriber(object sender, OnNewSubscriberArgs e)
@@ -97,17 +107,17 @@ namespace PolarPandaBackend
         }
 
 
-        private void runCommand(string cmd, string user)
+        private void RunCommand(string cmd, string user, string id)
         {
-            
-            if(cmd == "!currentgame")
+          
+            if (cmd == "!currentgame")
             {
                 string game = gameManager.GetCurrentGame();
-                client.SendMessage("polarpandagames", $"@" + user + " Current Game: " + game);
+                client.SendMessage("polarpandagames", $"@" + user + " The Current Game: " + game);
 
 
             }
-            else if (cmd == "!currentgame")
+            else if (cmd == "!c")
             {
                 string game = gameManager.GetCurrentGame();
                 client.SendMessage("polarpandagames", $"@" + user + " Current Game: " + game);
@@ -115,10 +125,44 @@ namespace PolarPandaBackend
 
             }
         }
+        private void RunAdminCommand(string cmd, string user)
+        {
+            if (cmd == "!start")
+            {
+                gameManager.SetCurrentGame(1);
 
+                SendMessage("Admin: @" + user + " Started " + gameManager.GetCurrentGame());
+             
+
+
+            }
+        }
+        public void SendMessage(string msg)
+        {
+            Task.Run(async () => {
+                client.SendMessage("polarpandagames", $"" + msg);
+            });
+        }
         public void SendAdminMessage(string msg)
         {
-            client.SendMessage("polarpandagames", msg);
+            // Will not work until Bot is Verified;
+          foreach (string s in GetAdminList())
+            {
+                client.SendWhisper("duhstenlive", "Hey there Admin!");
+            }
+        }
+
+        public List<string> GetAdminList()
+        {
+            List<string> result = new List<string>();
+            using (var reader = new StringReader(File.ReadAllText(@"cfg/admins.txt")))
+            {
+                for (string line = reader.ReadLine(); line != null; line = reader.ReadLine())
+                {
+                    result.Add(line);
+                }
+            }
+            return result;
         }
     }
 

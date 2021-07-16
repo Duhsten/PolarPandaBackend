@@ -6,16 +6,16 @@ using System.Text;
 // Client app is the one sending messages to a Server/listener.   
 // Both listener and client can send messages back and forth once a   
 // communication is established.  
-public class SocketClient
+public class BackendBroadcaster
 {
     public static int Main(String[] args)
     {
-        StartClient();
+      
         return 0;
     }
 
 
-    public static void StartClient()
+    public static void SendMessage(string message)
     {
         byte[] bytes = new byte[1024];
 
@@ -43,7 +43,7 @@ public class SocketClient
                     sender.RemoteEndPoint.ToString());
 
                 // Encode the data string into a byte array.    
-                byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
+                byte[] msg = Encoding.ASCII.GetBytes(message + "<EOF>");
 
                 // Send the data through the socket.    
                 int bytesSent = sender.Send(msg);
@@ -52,6 +52,7 @@ public class SocketClient
                 int bytesRec = sender.Receive(bytes);
                 Console.WriteLine("Echoed test = {0}",
                     Encoding.ASCII.GetString(bytes, 0, bytesRec));
+               
 
                 // Release the socket.    
                 sender.Shutdown(SocketShutdown.Both);
